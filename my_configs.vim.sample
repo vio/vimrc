@@ -1,0 +1,60 @@
+" My updates
+"
+" More info:
+"   snipmate - see https://github.com/SirVer/ultisnips/tree/master/UltiSnips
+"   ctags - go to function definition - http://blog.stwrt.ca/2012/10/31/vim-ctags
+"
+" TODO: disable FullScreen, JS folding method
+" TODO: better taglist
+" TODO: autocomplete - dictionaries
+" TODO: dochub.io
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+" colorscheme
+if has("gui_macvim")
+    set background=dark
+    colorscheme solarized
+else
+    colorscheme desert
+endif
+
+" fonts
+if has("mac") || has("macunix")
+    set gfn=Monaco:h13
+endif
+
+" show line number
+set number
+
+" config for github flavored markdown
+augroup markdown
+    au!
+    au BufNewFile,BufRead *.md,*.markdown setlocal filetype=ghmarkdown
+augroup END
+
+" alias for the first non-blank char
+nmap _ ^
+
+" disable folding on start
+" set foldmethod=manual | normal zE 
+set nofoldenable
+
+" map CtrlP
+nmap f :CtrlP<CR>
+nmap , :CtrlP<CR>
+
+" use shift + arrow to select text
+if has("gui_macvim")
+    let macvim_hig_shift_movement=1
+endif
+
+" use custom file for tags
+set tags=.ctags
+
+" dochub.io 
+let g:dochub_mapping='<C-h>'
+
+"" Load .vimrc from the starting folder
+set exrc
+set secure
