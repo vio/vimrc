@@ -105,3 +105,9 @@ au FileType mako vmap Si S"i${ _(<esc>2f"a) }<esc>
 " => vim-airline config (force color)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:airline_theme="luna"
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Vimroom
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:goyo_width=100
+nnoremap <silent> <leader>z :Goyo<cr>
