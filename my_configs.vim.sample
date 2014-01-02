@@ -41,7 +41,6 @@ nmap _ ^
 set nofoldenable
 
 " map CtrlP
-nmap f :CtrlP<CR>
 nmap , :CtrlP<CR>
 
 " use shift + arrow to select text
