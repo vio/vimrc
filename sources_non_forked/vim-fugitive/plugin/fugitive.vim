@@ -136,6 +136,12 @@ function! fugitive#extract_git_dir(path) abort
       " checking for them since such checks are extremely slow.
       break
     endif
+    if index(split($GIT_CEILING_DIRECTORIES, ':'), root) >= 0
+      break
+    endif
+    if root ==# $GIT_WORK_TREE && fugitive#is_git_dir($GIT_DIR)
+      return $GIT_DIR
+    endif
     let dir = s:sub(root, '[\/]$', '') . '/.git'
     let type = getftype(dir)
     if type ==# 'dir' && fugitive#is_git_dir(dir)
@@ -733,14 +739,16 @@ function! s:stage_info(lnum) abort
   endwhile
   if !lnum
     return ['', '']
-  elseif getline(lnum+1) =~# '^# .*\<git \%(reset\|rm --cached\) ' || getline(lnum) ==# '# Changes to be committed:'
+  elseif (getline(lnum+1) =~# '^# .*\<git \%(reset\|rm --cached\) ' && getline(lnum+2) ==# '#') || getline(lnum) ==# '# Changes to be committed:'
     return [matchstr(filename, colon.' *\zs.*'), 'staged']
+  elseif (getline(lnum+1) =~# '^# .*\<git add ' && getline(lnum+2) ==# '#') || getline(lnum) ==# '# Untracked files:'
+    return [filename, 'untracked']
   elseif getline(lnum+2) =~# '^# .*\<git checkout ' || getline(lnum) ==# '# Changes not staged for commit:'
     return [matchstr(filename, colon.' *\zs.*'), 'unstaged']
-  elseif getline(lnum+1) =~# '^# .*\<git add/rm ' || getline(lnum) ==# '# Unmerged paths:'
+  elseif getline(lnum+2) =~# '^# .*\<git \%(add\|rm\)' || getline(lnum) ==# '# Unmerged paths:'
     return [matchstr(filename, colon.' *\zs.*'), 'unmerged']
   else
-    return [filename, 'untracked']
+    return ['', 'unknown']
   endif
 endfunction
 
@@ -1139,7 +1147,8 @@ function! s:Edit(cmd,bang,...) abort
   endif
 
   if a:bang
-    let args = s:gsub(join(a:000, ' '), '\\@<!%(\\\\)*\zs[%#]', '\=s:buffer().expand(submatch(0))')
+    let arglist = map(copy(a:000), 's:gsub(v:val, ''\\@<!%(\\\\)*\zs[%#]'', ''\=s:buffer().expand(submatch(0))'')')
+    let args = join(arglist, ' ')
     if a:cmd =~# 'read'
       let git = buffer.repo().git_command()
       let last = line('$')
@@ -1152,7 +1161,7 @@ function! s:Edit(cmd,bang,...) abort
       return 'redraw|echo '.string(':!'.git.' '.args)
     else
       let temp = resolve(tempname())
-      let s:temp_files[temp] = buffer.repo().dir()
+      let s:temp_files[temp] = { 'dir': buffer.repo().dir(), 'args': arglist }
       silent execute a:cmd.' '.temp
       if a:cmd =~# 'pedit'
         wincmd P
@@ -1396,6 +1405,7 @@ function! s:diff_restore()
   let restore = 'setlocal nodiff noscrollbind'
         \ . ' scrollopt=' . &l:scrollopt
         \ . (&l:wrap ? ' wrap' : ' nowrap')
+        \ . ' foldlevel=999'
         \ . ' foldmethod=' . &l:foldmethod
         \ . ' foldcolumn=' . &l:foldcolumn
         \ . ' foldlevel=' . &l:foldlevel
@@ -1499,14 +1509,14 @@ function! s:Diff(bang,...)
   try
     let spec = s:repo().translate(file)
     let commit = matchstr(spec,'\C[^:/]//\zs\x\+')
+    let restore = s:diff_restore()
+    let w:fugitive_diff_restore = restore
     if s:buffer().compare_age(commit) < 0
-      execute 'rightbelow '.vert.'split '.s:fnameescape(spec)
+      execute 'rightbelow '.vert.'diffsplit '.s:fnameescape(spec)
     else
-      execute 'leftabove '.vert.'split '.s:fnameescape(spec)
+      execute 'leftabove '.vert.'diffsplit '.s:fnameescape(spec)
     endif
-    call s:diffthis()
-    wincmd p
-    call s:diffthis()
+    let w:fugitive_diff_restore = restore
     return ''
   catch /^fugitive:/
     return 'echoerr v:errmsg'
@@ -1626,7 +1636,8 @@ function! s:Blame(bang,line1,line2,count,args) abort
     else
       let cmd += ['--contents', '-']
     endif
-    let basecmd = escape(call(s:repo().git_command,cmd+['--',s:buffer().path()],s:repo()),'!')
+    let cmd += ['--', s:buffer().path()]
+    let basecmd = escape(call(s:repo().git_command,cmd,s:repo()),'!')
     try
       let cd = exists('*haslocaldir') && haslocaldir() ? 'lcd ' : 'cd '
       if !s:repo().bare()
@@ -1667,7 +1678,7 @@ function! s:Blame(bang,line1,line2,count,args) abort
         setlocal scrollbind nowrap nofoldenable
         let top = line('w0') + &scrolloff
         let current = line('.')
-        let s:temp_files[temp] = s:repo().dir()
+        let s:temp_files[temp] = { 'dir': s:repo().dir(), 'args': cmd }
         exe 'keepalt leftabove vsplit '.temp
         let b:fugitive_blamed_bufnr = bufnr
         let w:fugitive_leave = restore
@@ -2305,8 +2316,9 @@ augroup fugitive_temp
   autocmd!
   autocmd BufNewFile,BufReadPost *
         \ if has_key(s:temp_files,expand('<afile>:p')) |
-        \   let b:git_dir = s:temp_files[expand('<afile>:p')] |
+        \   let b:git_dir = s:temp_files[expand('<afile>:p')].dir |
         \   let b:git_type = 'temp' |
+        \   let b:git_args = s:temp_files[expand('<afile>:p')].args |
         \   call fugitive#detect(expand('<afile>:p')) |
         \   setlocal bufhidden=delete |
         \   nnoremap <buffer> <silent> q    :<C-U>bdelete<CR>|
