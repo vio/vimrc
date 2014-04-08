@@ -1,0 +1,3 @@
+[submodule "sources_non_forked/flavored-markdown"]
+	path = sources_non_forked/flavored-markdown
+	url = https://github.com/jtratner/vim-flavored-markdown.git
