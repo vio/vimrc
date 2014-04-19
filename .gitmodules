@@ -4,3 +4,6 @@
 [submodule "sources_non_forked/vinegar"]
 	path = sources_non_forked/vinegar
 	url = git://github.com/tpope/vim-vinegar.git
+[submodule "sources_non_forked/vim-jade"]
+	path = sources_non_forked/vim-jade
+	url = https://github.com/digitaltoad/vim-jade
