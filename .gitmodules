@@ -7,3 +7,6 @@
 [submodule "sources_non_forked/vim-jade"]
 	path = sources_non_forked/vim-jade
 	url = https://github.com/digitaltoad/vim-jade
+[submodule "sources_non_forked/mustache-handlebars"]
+	path = sources_non_forked/mustache-handlebars
+	url = https://github.com/mustache/vim-mustache-handlebars.git
