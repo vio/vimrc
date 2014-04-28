@@ -10,3 +10,9 @@
 [submodule "sources_non_forked/mustache-handlebars"]
 	path = sources_non_forked/mustache-handlebars
 	url = https://github.com/mustache/vim-mustache-handlebars.git
+[submodule "sources_non_forked/gist"]
+	path = sources_non_forked/gist
+	url = https://github.com/mattn/gist-vim.git
+[submodule "sources_non_forked/webapi"]
+	path = sources_non_forked/webapi
+	url = https://github.com/mattn/webapi-vim.git
